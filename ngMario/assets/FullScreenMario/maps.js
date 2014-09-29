@@ -7,7 +7,7 @@ function resetMaps() {
   var i, j, mapfunc;
   window.currentmap = [1,1];
   window.defaultsetting = { setting: "Overworld" };
-  
+
   // Mapfuncs starts off such that [X][Y] is window.WorldXY, if it exists
   window.mapfuncs = new Array(9);
   // For each [i][j], if window.WorldIJ exists, it's used
@@ -17,7 +17,7 @@ function resetMaps() {
     for(j = mapfunc.length; j >= 0; --j)
       mapfunc[j] = window["World" + i + "" + j];
   }
-  
+
   // Random maps are all window functions
   mapfuncs["Random"] = {
     Overworld:  WorldRandomOverworld,
@@ -27,12 +27,12 @@ function resetMaps() {
     Sky:        WorldRandomSky,
     Castle:     WorldRandomCastle
   };
-  
+
   // Right now there aren't too many special maps
   mapfuncs["Special"] = {
     Blank: BlankMap
   }
-  
+
   // Maps not found, and sounds, are loaded via AJAX
 //  startLoadingMaps();
 }
@@ -72,7 +72,7 @@ function setAreaSetting(area, setting, sound) {
   // Water fixen
   if(area.fillStyle.indexOf("Underwater") != -1) goUnderWater();
   else goOntoLand();
-  
+
   if(sound) AudioPlayer.playTheme();
   if(gameon) clearAllSprites();
   map.shifting = false;
@@ -103,7 +103,7 @@ function PreThing(xloc, yloc, type, extras, more, id) {
   args[2] = type;
   args = args.splice(2); // args is now [type, arg1, arg2...]
   Thing.apply(object, args, id);
-  
+
   this.object = object;
 }
 
@@ -112,23 +112,23 @@ function PreThing(xloc, yloc, type, extras, more, id) {
 // Resets the board and starts
 function setMap(one, two) {
   if(!gameon) return;
-  
+
   // Unless it's ok to, kill the editor
   if(!window.canedit && window.editing) editorClose(true);
-  
+
   // Remove random stuff
   removeRandomDisplays();
-  
+
   // If arguments[0] is an array, it's [one, two]
   if(one instanceof Array) {
     two = one[1];
     one = one[0];
   }
-  
+
   var newcurrentmap = one ? [one, two] : window.currentmap,
       newmap = new Map(),
       func = mapfuncs[newcurrentmap[0]];
-  
+
   // Create the new map using the mapfunc, making sure it's loaded
   if(!func) {
     log("No such map section exists (yet?):", func);
@@ -139,20 +139,20 @@ function setMap(one, two) {
     log("No such map exists (yet?):", func);
     return;
   }
-  
+
   // Since the func exists, set and use it
   window.map = newmap;
   window.currentmap = newcurrentmap;
   func(newmap);
-  
+
   // Set the map variables back to 0
   newmap.areanum = newmap.curloc =/* window.playediting =*/ 0;
   window.area = newmap.area = newmap.areas[0];
-  
+
   // Save the score if need be
   if(window.player && player.power) storePlayerStats();
   if(window.data) data.scoreold = data.score.amount;
-  
+
   // Actual resetting is done in shiftToLocation
   shiftToLocation(0);
 }
@@ -163,16 +163,16 @@ function setMap(one, two) {
 // Down means Player is moving down; Up means Player is moving up.
 function setMapRandom(transport) {
   if(!gameon) return;
-  
+
   resetSeed();
-  
+
   // Determine how to get into the map
   if(typeof(transport) == "string") transport = ["Random", transport];
   else if(!transport) transport = ["Random", "Overworld"];
-  
+
   // Actually set the map and shift to the location
   setMap(transport[0], transport[1]);
-  
+
   // Record random-specific stuff
   data.traveledold = data.traveled;
   map.sincechange = map.num_random_sections = 0;
@@ -189,24 +189,24 @@ function shiftToLocation(loc) {
   if(map.random && typeof(loc) != "number") {
     return setMapRandom(loc);
   }
-  if(typeof(loc) == "number") 
-    loc = map.locs[loc]; 
-  
+  if(typeof(loc) == "number")
+    loc = map.locs[loc];
+
   // Reset everything game-related
   pause();
   resetGameState();
   resetGameScreenPosition();
   resetQuadrants();
-  
+
   // Set this location's area as current
   map.areanum = loc.area;
   window.area = map.area = map.areas[map.areanum];
-  
+
   // Clear everything, create the map, then set post-creation settings
   setAreaPreCreation(area);
   area.creation();
   setAreaPostCreation(area);
-  
+
   // Start off by spawning, then placing Player
   spawnMap();
   player = placePlayer();
@@ -218,7 +218,7 @@ function shiftToLocation(loc) {
   loc.entry(player, loc.entrything);
   // Don't forget the least annoying part of programming this!
   TimeHandler.addEvent(AudioPlayer.playTheme, 2);
-  
+
   // Texts are bound-check checked periodically for peformance reasons
   TimeHandler.addEventInterval(checkTexts, 117, Infinity);
 }
@@ -234,16 +234,16 @@ function setAreaPreCreation(area) {
   area.precharacters = [];
   area.presolids = [];
   area.prescenery = [];
-  
+
   // Reset the spawn & scroll settings
   map.current_solid = map.current_character = map.current_scenery = map.shifting = 0;
   map.canscroll = true;
-  
+
   data.time.amount = map.time;
   data.world.amount = currentmap[0] + "-" + currentmap[1];
   setDataDisplay();
   startDataTime();
-  
+
   if(map.random) {
     data.world.amount = "Random Map";
     data.world.element.innerHTML = "WORLD<br>Random Map";
@@ -259,13 +259,13 @@ function clearTexts() {
 function setAreaPostCreation() {
   map.current_character = map.current_solid = map.current_scenery = 0;
   area.width = max(area.width, gamescreen.width);
-  
+
   // Reset gravity and underwater
   map.underwater = map.area.underwater;
   map.jumpmod = 1.056 + 3.5 * map.underwater;
   map.has_lakitu = false;
   TimeHandler.addEvent(setMapGravity, 1);
-  
+
   // If it's underwater, give it the waves on top and player's bubble event
   if(area.underwater) {
     // Random maps have a block to stop player from swimming too high
@@ -273,12 +273,12 @@ function setAreaPostCreation() {
     // Non-random maps also have a water sprite (randoms set it themselves)
     if(!map.random) area.presolids.push(new PreThing(0, 16, Sprite, "Water", [area.width / 3, 1]));
   }
-  
+
   // Sort everything using ascending order
   area.presolids.sort(prethingsorter);
   area.precharacters.sort(prethingsorter);
   area.prescenery.sort(prethingsorter);
-  
+
   // If the area has loops (really just castles), do this.
   if(area.sections && area.sections[0]) {
     setBStretch();
@@ -290,7 +290,7 @@ function setAreaPostCreation() {
     var blocker = new PreThing(area.width, 0, ScrollBlocker);
     area.presolids.push(blocker);
   }
-  
+
   // The fillstyle is the background color
   area.fillStyle = getAreaFillStyle(area.setting);
 }
@@ -326,7 +326,7 @@ function spawnMap() {
       quadswidtht2 = QuadsKeeper.getQuadWidth() * 2 + rightdiff,
       screenrightpq = screenright + quadswidtht2,
       arr, arrlen, prething, thing, current;
-  
+
   // Spawn characters
   arr = area.precharacters;
   arrlen = arr.length;
@@ -338,7 +338,7 @@ function spawnMap() {
     ++current;
   }
   map.current_character = current;
-  
+
   // Spawn solids
   arr = area.presolids;
   arrlen = arr.length;
@@ -350,7 +350,7 @@ function spawnMap() {
     ++current;
   }
   map.current_solid = current;
-  
+
   // Spawn scenery
   arr = area.prescenery;
   arrlen = arr.length;
@@ -368,7 +368,7 @@ function spawnMap() {
 // Entry Functions
 function goToTransport(transport) {
   // Goes to a new map
-  if(transport instanceof Array) { 
+  if(transport instanceof Array) {
     map.ending = true;
     storePlayerStats();
     pause();
@@ -420,7 +420,7 @@ function entryRandom(me) {
   addSeedDisplay();
   // To do: remember to set the text & width of the curmap datadisplay
   switch(map.entrancetype) {
-    case "Down": 
+    case "Down":
       entryNormal(player);
     break;
     case "Up":
@@ -449,9 +449,9 @@ function enterCloudWorld(me) {
   // The vine goes up until it has four blocks above the clouds, then waits 2 seconds
   // Player climbs up the left until two blocks from the top, then switches & jumps
   // if(paused) unpause();
-  
+
   if(map.random) map.exitloc = getAfterSkyTransport();
-  
+
   var screenbottom = 140 * unitsize,
       screentop = 72 * unitsize;
   me.placed = me.nofall = true;
@@ -460,10 +460,10 @@ function enterCloudWorld(me) {
   removeClass(me, "jumping");
   addClasses(me, ["climbing", "animated"]);
   me.climbing = TimeHandler.addSpriteCycle(me, ["one", "two"], "climbing");
-  
+
   me.attached = new Thing(Vine, -1);
   addThing(me.attached, unitsizet32, screenbottom - unitsizet8);
-  
+
   var movement = setInterval(function() {
     // Vine moving up
     if(me.attached.top <= screentop) {
@@ -520,7 +520,7 @@ function startWalking(me) {
   me.nofall = me.nocollide = false;
 }
 function intoPipeVert(me, pipe, transport) {
-  if(!pipe.transport || !me.resting || 
+  if(!pipe.transport || !me.resting ||
                         me.right + unitsizet2 > pipe.right ||
                         me.left - unitsizet2 < pipe.left) return;
   pipePreparations(me);
@@ -538,7 +538,7 @@ function intoPipeHoriz(me, pipe, transport) {
   // If Player isn't resting or swimming, he shouldn't be allowed to pipe
   // (resting may have been cleared at this point, so yvel is how it checks)
   // if(abs(me.yvel) > unitsized8 || !map.underwater) return;
-  
+
   pipePreparations(me);
   switchContainers(me, characters, scenery);
   unpause();
@@ -695,19 +695,19 @@ function pushPreScale(xloc, yloc, width, settings) {
       offy1 = settings[1] + 1.5,
       offy2 = settings[2] + 1.5,
       me = pushPreThing(Scale, xloc, yloc, width).object;
-  
+
   // Set the platforms
   platleft = pushPreThing(Platform, xloc - offx, yloc - offy1 * 4, platwidth, moveFallingScale).object;
   platright = pushPreThing(Platform, xloc + width * 4 - platwidth - 6, yloc - offy2 * 4, platwidth, moveFallingScale).object;
   platleft.parent = me; platright.parent = me;
   platleft.partner = platright; platright.partner = platleft;
-  platleft.tension = offy1 * unitsizet4 - unitsize * 10; 
+  platleft.tension = offy1 * unitsizet4 - unitsize * 10;
   platright.tension = offy2 * unitsizet4 - unitsize * 10;
-  
+
   // Set the tension
   me.tensionleft = offy1 * unitsize;
   me.tensionright = offy2 * unitsize;
-  
+
   // Add the strings
   platleft.string = pushPreScenery("String", xloc, yloc - offy1 * 4, 1, (offy1 - .5) * 4).object;
   platright.string = pushPreScenery("String", xloc + width * 4 - 1, yloc - offy2 * 4, 1, (offy2 - .5) * 4).object;
@@ -721,11 +721,11 @@ function pushPreWarpWorld(xloc, yloc, worlds, offset, block) {
   var startx = (offset || 0) + xloc + 10,
       len = worlds.length,
       pipe, i;
-  
+
   warp = pushPreThing(WarpWorld, xloc, yloc + ceilmax).object;
   var title = pushPreText({innerText: "WELCOME TO WARP ZONE!", style: {visibility: "hidden"} }, startx, 58);
   warp.texts.push(title.object);
-  
+
   for(i = 0; i < len; ++i) {
     if(worlds[i] != -1) {
       warp.pipes.push(pipe = pushPrePipe(startx, yloc, 24, true, worlds[i]).object);
@@ -735,7 +735,7 @@ function pushPreWarpWorld(xloc, yloc, worlds, offset, block) {
     }
     startx += 32;
   }
-  
+
   if(block) {
     window.block = pushPreThing(ScrollBlocker, xloc, ceilmax);
     pushPreThing(ScrollBlocker, startx + 16, ceilmax);
@@ -776,7 +776,7 @@ function setMapGravity() {
 }
 
 function setBStretch() {
-  window.bstretch = gamescreen.width / 8 - 2; 
+  window.bstretch = gamescreen.width / 8 - 2;
 }
 
 /*
@@ -796,11 +796,11 @@ function endCastleOutside(xloc, yloc, castlevel, wall, dist) {
   detect.stone = pushPreThing(Stone, xloc + 4, yloc + 8).object;
   detect.top = pushPreThing(FlagTop, xloc + 6.5, 84).object;
   detect.pole = pushPreThing(FlagPole, xloc + 8, 80).object;
-  
+
   // detect2.castle = pushPreScenery("Castle", xloc + dist, yloc + castlevel).object;
   if(wall) pushPreScenery("CastleWall", xloc + dist + 72, yloc, wall);
   if(castlevel == 0) shiftHoriz(detect2, unitsizet8);
-  
+
   pushPreCastle(xloc + dist + 16, yloc, castlevel);
 }
 
@@ -818,16 +818,16 @@ function endCastleInside(xloc, last, hard) {
   axe.chain = pushPreThing(CastleChain, xloc + 96.5, 32).object;
   axe.bowser = pushPreThing(Bowser, xloc + 69, 42, hard).object;
   pushPreThing(ScrollBlocker, xloc + 112, ceilmax); // 104 + 16
-  
+
   pushPreThing(Stone, xloc, 88, 32);
   fillPreWater(xloc, 0, 26);
   pushPreFloor(xloc + 104, 32, 3);
   pushPreFloor(xloc + 104, 0, 19);
   pushPreThing(Stone, xloc + 112, 80, 2, 3);
-  
+
   // Stop that scrolling... again
   pushPreThing(ScrollBlocker, xloc + 256, ceilmax);
-  
+
   // Place the NPC
   endCastleInsideFinal(xloc, last);
 }
@@ -836,7 +836,7 @@ function endCastleInsideFinal(xloc, last) {
   var stopper = pushPreFuncCollider(xloc + 180, collideCastleNPC).object,
       style = { visibility: "hidden" },
       text, i;
-  // Either put Peach... 
+  // Either put Peach...
   if(last) {
     pushPreThing(Peach, xloc + 194, 13).object;
     text = stopper.text = [
@@ -859,10 +859,10 @@ function pushPreSectionPass(xloc, yloc, width, height, secnum) {
   var passer = pushPreThing(Collider, xloc, yloc, [width, height], [sectionPass, sectionColliderInit]).object,
       secnum = map.area.sections.current || 0,
       section = map.area.sections[secnum];
-  
+
   if(section.numpass) ++section.numpass;
   else section.numpass = 1;
-  
+
   if(!section.colliders) section.colliders = [passer];
   else section.colliders.push(passer);
 }
@@ -870,7 +870,7 @@ function pushPreSectionFail(xloc, yloc, width, height, secnum) {
   var failer = pushPreThing(Collider, xloc, yloc, [width, height], [sectionFail, sectionColliderInit]).object,
       secnum = map.area.sections.current || 0,
       section = map.area.sections[secnum];
-  
+
   if(!section.colliders) section.colliders = [failer];
   else section.colliders.push(failer);
 }
@@ -892,14 +892,14 @@ function sectionPass(character, collider) {
 function sectionFail(character, collider) {
   if(character.type != "player") return false;
   collider.nocollide = true;
-  
+
   activateSection(collider.parent, false);
 }
 function activateSection(parent, status) {
   var colliders = parent.colliders;
   for(var i=colliders.length-1; i>=0; --i)
     killNormal(colliders[i]);
-  
+
   parent.activated = true;
   parent.passed = status;
 }
@@ -909,7 +909,7 @@ function pushPreTree(xloc, yloc, width) {
   // Although the tree trunks in later trees overlap earlier ones, it's ok because
   // the pattern is indistinguishible when placed correctly.
   var dtb = DtB(yloc);
-  pushPreScenerySolid("TreeTrunk", xloc + 8, yloc - dtb - 8, width - 2 , dtb / 8); 
+  pushPreScenerySolid("TreeTrunk", xloc + 8, yloc - dtb - 8, width - 2 , dtb / 8);
 }
 function pushPreShroom(xloc, yloc, width) {
   pushPreThing(ShroomTop, xloc, yloc, width);
@@ -922,11 +922,11 @@ function pushPrePipe(xloc, yloc, height, pirhana, intoloc, exitloc) {
     height = gamescreen.height;
     yloc -= gamescreen.height;
   }
-  
+
   var prepipe = pushPreThing(Pipe, xloc, yloc + height, height / 8, intoloc),
       pipe = prepipe.object/*,
       vert = pushPreThing(PipeVertical, xloc, yloc + height - 8, height - 8)*/;
-  
+
   if(pirhana) pipe.pirhana = pushPreThing(Pirhana, xloc + 4, yloc + height + 12).object;
   if(exitloc) {
     map.locs[exitloc].entrything = pipe;
@@ -955,9 +955,9 @@ function pushPreCastleBig(xloc, yloc) {
     pushPreScenerySolid("CastleDoor", xloc + 24 + i * 16, yloc + 24);
   // Top half filling
   for(i = 0; i < 5; ++i)
-    if(i == 2) continue; 
+    if(i == 2) continue;
     else pushPreScenerySolid("BrickHalf", xloc + 16 + i * 8, yloc + 48);
-  
+
   // Left railings
   for(i = 0; i < 2; ++i)
     pushPreScenerySolid("CastleRailing", xloc + i * 8, yloc + 44);
@@ -967,7 +967,7 @@ function pushPreCastleBig(xloc, yloc) {
   // Right railings
   for(i = 5; i < 7; ++i)
     pushPreScenerySolid("CastleRailing", xloc + 16 + i * 8, yloc + 44);
-  
+
   // Bottom alternate fillings
   for(i = 0; i < 2; ++i)
     for(j = 0; j < 3; ++j)
@@ -975,22 +975,22 @@ function pushPreCastleBig(xloc, yloc) {
   // Bottom alternate doors
   for(i = 0; i < 3; ++i)
     pushPreScenerySolid("CastleDoor", xloc + 16 + i * 16, yloc);
-    
+
   // Left fill
   for(i = 0; i < 2; ++i) {
     for(j = 0; j < 5; ++j)
       pushPreScenerySolid("BrickPlain", xloc + i * 8, yloc + j * 8);
     pushPreScenerySolid("BrickHalf", xloc + i * 8, yloc + 40);
   }
-  
+
   // Right fill
   for(i = 0; i < 2; ++i) {
     for(j = 0; j < 5; ++j)
       pushPreScenerySolid("BrickPlain", xloc + 56 + i * 8, yloc + j * 8);
     pushPreScenerySolid("BrickHalf", xloc + 56 + i * 8, yloc + 40);
   }
-  
-  for(i = 0; i < 3; ++i) 
+
+  for(i = 0; i < 3; ++i)
     for(j = 0; j < 2; ++j)
       pushPreScenerySolid("BrickHalf", xloc + 16 + i * 16, yloc + 20 + j * 20);
 }
@@ -998,7 +998,7 @@ function pushPreCastleBig(xloc, yloc) {
 // To do: y u no work scenery
 function pushPreCastleSmall(xloc, yloc) {
   var i, j;
-  
+
   // Top railing
   for(i = 0; i < 3; ++i) pushPreScenerySolid("CastleRailing", xloc + 8 + i * 8, yloc + 36);
   // Top bricking
@@ -1042,10 +1042,10 @@ function zoneEnableLakitu() {
 }
 function zoneDisableLakitu() {
   if(!map.has_lakitu) return;// killNormal(me);
-  
+
   var lakitu = map.has_lakitu;
   map.zone_lakitu = map.has_lakitu = false;
-  
+
   if(!lakitu.lookleft) {
     lakitu.lookleft = true;
     removeClass(lakitu, "flipped");
@@ -1109,10 +1109,10 @@ function World11(map) {
   map.areas = [
     new Area("Overworld", function() {
       setLocationGeneration(0);
-      
+
       pushPrePattern("backreg", 0, 0, 5);
       pushPreFloor(0, 0, 69);
-      
+
 
       pushPreThing(Brick, 120, jumplev1);
       pushPreThing(Brick, 128, jumplev1);
@@ -1137,7 +1137,7 @@ function World11(map) {
       pushPreThing(Block, 424, jumplev1, null, null, '/learned/1');
       pushPreThing(Block, 432, jumplev1, null, null, '/learned/2');
       pushPreThing(Block, 440, jumplev1, null, null, '/learned/3');
-      pushPreThing(Block, 432, jumplev2, Mushroom, null, '/learned/4');
+      pushPreThing(Block, 432, jumplev2, null, null, '/learned/4');
 
       pushPrePipe(524, 0, 16, false);
       pushPreThing(Stone, 572, 8, 1, 1);
@@ -1162,7 +1162,7 @@ function World11(map) {
       pushPreThing(Brick, 736, jumplev2);
       pushPreThing(Brick, 744, jumplev2);
 
-      pushPreThing(HammerBro, 800, 16, null, null, '/problems/8');
+      pushPreThing(Blooper, 800, 16, null, null, '/problems/8');
       pushPreThing(Blooper, 880, 16, null, null, '/problems/9');
 
       pushPreThing(Brick, 850, jumplev1);
@@ -1174,8 +1174,8 @@ function World11(map) {
       pushPreThing(Brick, 898, jumplev1);
 
       pushPreThing(Block, 866, jumplev2, null, null, '/learned/5');
-      pushPreThing(Block, 874, jumplev2, Mushroom, null, '/learned/6');
-//      pushPreThing(Block, 882, jumplev2, Mushroom, null, '/learned/7');
+      pushPreThing(Block, 874, jumplev2, null, null, '/learned/6');
+      pushPreThing(Block, 882, jumplev2, null, null, '/learned/7');
 
       pushPreFloor(1240, 0, 69);
       pushPreThing(Stone, 1008, 8);
@@ -1186,7 +1186,7 @@ function World11(map) {
       pushPreThing(Stone, 1048, 48, 1, 6);
       pushPreThing(Stone, 1056, 56, 1, 7);
       endCastleOutside(1080, 0, 1);
-      
+
     })
   ];
 }
@@ -1203,7 +1203,7 @@ function World12(map) {
   map.areas = [
     new Area("Overworld", function() {
       setLocationGeneration(0);
-      
+
       pushPreCastle();
       pushPrePattern("backcloud", 0, 4, 1);
       pushPreFloor(0, 0, 24);
@@ -1212,13 +1212,13 @@ function World12(map) {
     }),
     new Area("Underworld", function() {
       setLocationGeneration(1);
-    
+
       fillPreThing(Brick, 0, 8, 1, 11, 8, 8);
       pushPreFloor(0, 0, 80);
       makeCeiling(48, 83);
       pushPreThing(Block, 80, jumplev1, Mushroom);
       fillPreThing(Block, 88, jumplev1, 4, 1, 8, 8);
-      
+
       pushPreThing(Goomba, 128, 8);
       pushPreThing(Stone, 136, 8);
       pushPreThing(Goomba, 136, 16);
@@ -1231,7 +1231,7 @@ function World12(map) {
       pushPreThing(Brick, 232, 40, Coin);
       pushPreThing(Stone, 248, 24, 1, 3);
       pushPreThing(Stone, 264, 16, 1, 2);
-      
+
       fillPreThing(Brick, 312, 32, 1, 3, 8, 8);
       pushPreThing(Brick, 320, 32);
       pushPreThing(Coin, 321, 39);
@@ -1241,7 +1241,7 @@ function World12(map) {
       pushPreThing(Brick, 344, 48);
       fillPreThing(Koopa, 352, 12, 2, 1, 12);
       fillPreThing(Brick, 352, 32, 1, 3, 8, 8);
-      
+
       // pushPreThing(Coin, 360, 62);
       pushPreThing(Brick, 360, 32);
       fillPreThing(Brick, 368, 32, 1, 2, 8, 8);
@@ -1257,23 +1257,23 @@ function World12(map) {
       fillPreThing(Brick, 496, 32, 2, 7, 8, 8);
       pushPreThing(Goomba, 494, 8);
       pushPreThing(Goomba, 510, 8);
-      
+
       fillPreThing(Brick, 528, 72, 4, 2, 8, 8);
       fillPreThing(Brick, 536, 32, 1, 5, 8, 8);
       fillPreThing(Brick, 544, 32, 2, 1, 8, 8);
       pushPreThing(Coin, 545, 39);
       pushPreThing(Brick, 552, 40, Mushroom);
-      
+
       fillPreThing(Brick, 576, 32, 2, 1, 8, 8);
       pushPreThing(Brick, 576, 40);
       fillPreThing(Brick, 576, 48, 2, 3, 8, 8);
       pushPreThing(Brick, 584, 40, Coin);
       pushPreThing(Goomba, 584, 72);
-      
+
       fillPreThing(Brick, 608, 32, 4, 1, 8);
       fillPreThing(Brick, 608, 72, 4, 2, 8);
       fillPreThing(Goomba, 608, 40, 2, 1, 12);
-      
+
       pushPreFloor(664, 0, 34);
       fillPreThing(Brick, 672, 40, 6, 2, 8, 8);
       fillPreThing(Coin, 674, 64, 6, 1, 8, 8);
@@ -1284,10 +1284,10 @@ function World12(map) {
       pushPrePipe(848, 0, 32, true);
       pushPreThing(Goomba, 872, 8);
       pushPrePipe(896, 0, 16, true, false, 3);
-      
+
       pushPreFloor(952, 0, 2);
       fillPreThing(Brick, 952, 8, 2, 3, 8, 8);
-      
+
       pushPreFloor(984, 0, 12);
       pushPreThing(Stone, 1040, 8);
       pushPreThing(Stone, 1048, 16, 1, 2);
@@ -1298,14 +1298,14 @@ function World12(map) {
       pushPreThing(Stone, 1072, 32, 1, 4);
       pushPrePlatformGenerator(1096, 6, 1);
       // pushPreThing(PlatformGenerator, 1096, ceilmax, 6, 1);
-      
+
       pushPreFloor(1144, 0, 8);
       fillPreThing(Brick, 1144, 40, 5, 1, 8, 8);
       pushPreThing(Koopa, 1152, 12, true);
       pushPreThing(Brick, 1184, 40, Mushroom);
       pushPrePlatformGenerator(1224, 6, -1);
       // pushPreThing(PlatformGenerator, 1224, ceilmax, 6, -1);
-      
+
       pushPreFloor(1266, 0, 32);
       fillPreThing(Brick, 1266, 8, 17, 3, 8, 8);
       pushPreThing(PipeSide, 1314, 40, 4);
@@ -1319,7 +1319,7 @@ function World12(map) {
     }),
     new Area("Underworld", function() {
       setLocationGeneration(2);
-      
+
       pushPreFloor(0, 0, 17);
       fillPreThing(Brick, 0, 8, 1, 11, 8, 8);
       fillPreThing(Coin, 25, 7, 9, 1, 8, 8);
@@ -1333,7 +1333,7 @@ function World12(map) {
     }),
     new Area("Overworld", function() {
       setLocationGeneration(4);
-      
+
       pushPrePattern("backreg", 104, 0, 1);
       pushPreFloor(0, 0, 58);
       pushPrePipe(0, 0, 16, true, false, 4);

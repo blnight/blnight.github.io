@@ -41,7 +41,7 @@ function start() {
   //apply some cheats
   game.data.time.amount = Infinity;
   game.gainLife(Infinity)
-  game.godMode = true;
+  // game.godMode = true;
 }
 
 function setLocalStatus() {
